@@ -198,6 +198,7 @@ bin/*
 !bin/.gitkeep
 div/
 data/hf_cache/
+data/runs/
 report/
 slurm_logs/*
 !slurm_logs/.gitkeep
