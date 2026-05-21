@@ -2,11 +2,10 @@
 #SBATCH --job-name=smoke_rag_qwen3
 #SBATCH --account=ec403
 #SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=younesb@uio.no
-#SBATCH --time=01:00:00
+#SBATCH --time=00:15:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=24G
+#SBATCH --mem=8G
 #SBATCH --partition=accel
 #SBATCH --gpus=rtx30:1
 #SBATCH --output=slurm_logs/smoke_rag-%j.out

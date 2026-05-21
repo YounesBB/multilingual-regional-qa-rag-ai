@@ -2,7 +2,6 @@
 #SBATCH --job-name=oblig3_p3_attn
 #SBATCH --account=ec403
 #SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=younesb@uio.no
 #SBATCH --time=10:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
@@ -51,4 +50,3 @@ python train_part3.py \
   --lora_ranks "16" \
   --lora_alphas "32" \
   --lora_dropouts "0.05"
-

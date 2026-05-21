@@ -2,7 +2,6 @@
 #SBATCH --job-name=oracle_rag_qwen3
 #SBATCH --account=ec403
 #SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=younesb@uio.no
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4

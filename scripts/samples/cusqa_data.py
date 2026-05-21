@@ -1,6 +1,4 @@
-"""
-Loads CUS QA splits and generates small samples for smoke tests.
-"""
+"""Load CUS-QA splits and generate small samples for smoke tests."""
 
 from __future__ import annotations
 

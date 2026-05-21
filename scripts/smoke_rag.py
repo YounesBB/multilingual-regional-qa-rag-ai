@@ -27,6 +27,13 @@ class Chunk:
     text: str
 
 
+@dataclass(frozen=True)
+class Generator:
+    tokenizer: object
+    model: object
+    uses_processor: bool = False
+
+
 def read_jsonl(path: Path) -> list[dict]:
     records = []
     with path.open(encoding="utf-8") as handle:
@@ -201,27 +208,106 @@ def build_prompt(question: str, lang: str, contexts: Sequence[dict]) -> str:
     )
 
 
-def load_qwen_generator(model_name: str, cache_dir: Optional[Path]):
+def load_generator(
+    model_name: str,
+    cache_dir: Optional[Path],
+    trust_remote_code: bool = False,
+    local_files_only: bool = False,
+):
     try:
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer
     except ImportError as exc:
         raise RuntimeError(
             "Generation requires torch and transformers. Use --skip-generation "
             "for local retrieval-only smoke checks."
         ) from exc
 
-    model_kwargs = {"torch_dtype": "auto", "device_map": "auto"}
-    tokenizer_kwargs = {}
+    model_kwargs = {
+        "torch_dtype": "auto",
+        "device_map": "auto",
+        "trust_remote_code": trust_remote_code,
+        "local_files_only": local_files_only,
+    }
+    tokenizer_kwargs = {
+        "trust_remote_code": trust_remote_code,
+        "local_files_only": local_files_only,
+    }
     if cache_dir:
         model_kwargs["cache_dir"] = str(cache_dir)
         tokenizer_kwargs["cache_dir"] = str(cache_dir)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
+    uses_processor = "gemma-4" in model_name.lower()
+    if uses_processor:
+        try:
+            tokenizer = AutoProcessor.from_pretrained(model_name, **tokenizer_kwargs)
+        except ValueError:
+            uses_processor = False
+            tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
     model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
     model.eval()
     torch.set_grad_enabled(False)
-    return tokenizer, model
+    return Generator(tokenizer=tokenizer, model=model, uses_processor=uses_processor)
+
+
+def load_qwen_generator(model_name: str, cache_dir: Optional[Path]):
+    return load_generator(model_name, cache_dir)
+
+
+def render_chat_prompt(tokenizer, prompt: str) -> str:
+    messages = [{"role": "user", "content": prompt}]
+    if getattr(tokenizer, "chat_template", None):
+        try:
+            return tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False,
+            )
+        except TypeError:
+            return tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+    return prompt
+
+
+def _inputs_to_device(model_inputs, device):
+    if hasattr(model_inputs, "to"):
+        return model_inputs.to(device)
+    return {key: value.to(device) for key, value in model_inputs.items()}
+
+
+def _decode_generation(tokenizer, output_ids, uses_processor: bool) -> str:
+    response = tokenizer.decode(output_ids, skip_special_tokens=not uses_processor)
+    if uses_processor and hasattr(tokenizer, "parse_response"):
+        try:
+            parsed = tokenizer.parse_response(response)
+        except Exception:
+            parsed = None
+        if isinstance(parsed, str):
+            response = parsed
+        elif isinstance(parsed, dict):
+            response = (
+                parsed.get("answer")
+                or parsed.get("content")
+                or parsed.get("text")
+                or parsed.get("response")
+                or response
+            )
+        elif parsed:
+            response = str(parsed)
+
+    response = re.sub(
+        r"<\|channel\>thought\s*.*?<channel\|>",
+        "",
+        response,
+        flags=re.DOTALL,
+    )
+    response = re.sub(r"<\|[^>]+?\|>", "", response)
+    response = re.sub(r"<[^>]+>", "", response)
+    return response.strip()
 
 
 def generate_answer(
@@ -231,29 +317,42 @@ def generate_answer(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
+    generation_top_k: int = 0,
+    uses_processor: bool = False,
 ) -> str:
-    messages = [{"role": "user", "content": prompt}]
-    try:
-        text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=False,
-        )
-    except TypeError:
-        text = tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+    text = render_chat_prompt(tokenizer, prompt)
+    input_device = getattr(model, "device", None)
+    if input_device is None:
+        input_device = next(model.parameters()).device
+    if uses_processor:
+        model_inputs = tokenizer(text=text, return_tensors="pt")
+    else:
+        model_inputs = tokenizer([text], return_tensors="pt")
+    model_inputs = _inputs_to_device(model_inputs, input_device)
+    generation_kwargs = {
+        "max_new_tokens": max_new_tokens,
+        "do_sample": temperature > 0.0,
+    }
+    if temperature > 0.0:
+        generation_kwargs["temperature"] = temperature
+        generation_kwargs["top_p"] = top_p
+        if generation_top_k > 0:
+            generation_kwargs["top_k"] = generation_top_k
+    pad_token_id = getattr(tokenizer, "pad_token_id", None)
+    if pad_token_id is None:
+        eos_token_id = getattr(tokenizer, "eos_token_id", None)
+        if isinstance(eos_token_id, list):
+            eos_token_id = eos_token_id[0] if eos_token_id else None
+        pad_token_id = eos_token_id
+    if pad_token_id is not None:
+        generation_kwargs["pad_token_id"] = pad_token_id
+
     generated_ids = model.generate(
         **model_inputs,
-        max_new_tokens=max_new_tokens,
-        do_sample=temperature > 0.0,
-        temperature=temperature if temperature > 0.0 else None,
-        top_p=top_p,
+        **generation_kwargs,
     )
     output_ids = generated_ids[0][len(model_inputs.input_ids[0]) :]
-    return tokenizer.decode(output_ids, skip_special_tokens=True).strip()
+    return _decode_generation(tokenizer, output_ids, uses_processor)
 
 
 def build_records(args: argparse.Namespace) -> list[dict]:
@@ -267,7 +366,12 @@ def build_records(args: argparse.Namespace) -> list[dict]:
 
     generator = None
     if not args.skip_generation:
-        generator = load_qwen_generator(args.model_name, args.cache_dir)
+        generator = load_generator(
+            args.model_name,
+            args.cache_dir,
+            args.trust_remote_code,
+            args.local_files_only,
+        )
 
     output_records = []
     for question_record in questions:
@@ -279,12 +383,14 @@ def build_records(args: argparse.Namespace) -> list[dict]:
         prompt = build_prompt(question, lang, retrieved)
         if generator:
             answer = generate_answer(
-                generator[0],
-                generator[1],
+                generator.tokenizer,
+                generator.model,
                 prompt,
                 args.max_new_tokens,
                 args.temperature,
                 args.top_p,
+                args.generation_top_k,
+                generator.uses_processor,
             )
         else:
             answer = ""
@@ -309,6 +415,9 @@ def build_records(args: argparse.Namespace) -> list[dict]:
                     "max_new_tokens": args.max_new_tokens,
                     "temperature": args.temperature,
                     "top_p": args.top_p,
+                    "generation_top_k": args.generation_top_k,
+                    "trust_remote_code": args.trust_remote_code,
+                    "local_files_only": args.local_files_only,
                     "answer": answer,
                 },
             }
@@ -343,6 +452,22 @@ def main() -> int:
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--top-p", type=float, default=0.8)
     parser.add_argument(
+        "--generation-top-k",
+        type=int,
+        default=0,
+        help="Sampling top-k for generation. Use 0 to leave the model default.",
+    )
+    parser.add_argument(
+        "--trust-remote-code",
+        action="store_true",
+        help="Allow custom model code when required by a Hugging Face model.",
+    )
+    parser.add_argument(
+        "--local-files-only",
+        action="store_true",
+        help="Load model/tokenizer files only from the local cache.",
+    )
+    parser.add_argument(
         "--skip-generation",
         action="store_true",
         help="Validate retrieval and output shape without loading a generator.",
@@ -351,6 +476,7 @@ def main() -> int:
 
     if args.cache_dir:
         os.environ.setdefault("HF_HOME", str(args.cache_dir))
+        os.environ.setdefault("HF_HUB_CACHE", str(args.cache_dir))
         os.environ.setdefault("HF_DATASETS_CACHE", str(args.cache_dir))
         os.environ.setdefault("TRANSFORMERS_CACHE", str(args.cache_dir))
 

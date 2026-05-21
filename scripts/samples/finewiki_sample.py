@@ -1,5 +1,4 @@
-# Samples FineWiki documents for cs sk uk using streaming.
-#Writes a small JSONL file for smoke tests and schema checks.
+"""Sample FineWiki documents for smoke tests and schema checks."""
 
 from __future__ import annotations
 
