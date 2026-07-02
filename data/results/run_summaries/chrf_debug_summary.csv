@@ -1,0 +1,2 @@
+system_id,record_count,chrf,cs_chrf,sk_chrf,uk_chrf,empty_answer_count,target_title_hit_rate,input_jsonl
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top5_1perlang,3,20.3197,28.0195,27.2256,11.1973,0,1.000000,/cluster/work/projects/ec403/ec-younesb/cusqa-rag-2026/runs/embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top5_1perlang.jsonl

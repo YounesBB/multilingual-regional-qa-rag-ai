@@ -1,0 +1,11 @@
+component,setting,role
+Data subset,"Native-text Czech, Slovak, and Ukrainian CUS-QA rows",Fixed
+Retrieval corpus,"Same-language Czech, Slovak, and Ukrainian FineWiki",Fixed
+Retriever,intfloat/multilingual-e5-large with query/passage prefixes,Fixed
+Index,FAISS IndexFlatIP over L2-normalized embeddings,Fixed
+Chunking,512-token windows with 128-token overlap,Fixed
+Context depth,top-5 or top-10 retrieved chunks,Varied
+Generator,"Tiny Aya Global, Tiny Aya Water, Llama-8B, Qwen3-30B",Varied
+Decoding,"temperature 0.0, top-p 1.0, max 64 new tokens",Fixed
+Development metric,"M-Prometheus accuracy, with chrF as secondary",Fixed
+Hidden-test metric,Codabench native-text chrF and auxiliary metrics,Fixed

@@ -1,0 +1,9 @@
+audit_pattern,cusqa_dev_ids,interpretation
+Clear retrieval miss,"328, 374",The intended source page or answer evidence is absent from the selected context.
+Correct page / distractor,"313 (2 rows), 260, 173","The correct page appears, but a higher-ranked or more salient wrong passage drives generation."
+Evidence present, not extracted,"265, 65","The answer is visible in retrieved context, but the model gives a related non-answer or wrong attribute."
+Oracle chunk limitation,"306, 90","The gold page is known, but selected chunks or within-page interpretation still fail."
+Source/entity ambiguity,"294, 28, 446","Source versions, disambiguation pages, or underspecified entity names make the intended answer unclear."
+Judge/reference specificity,"477, 362",A concise answer can address the main question while omitting details present in the reference.
+Table-structure failure,102,Plain-text chunking of tables makes row comparison and attribute selection difficult.
+Generation length issue,357,List-style answers can be truncated by the 64-token cap.

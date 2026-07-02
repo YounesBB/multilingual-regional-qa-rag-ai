@@ -1,0 +1,4 @@
+system,setting,accuracy,correct,total,runtime,peak_memory_gpu,extra_correct_vs_previous,extra_runtime_minutes_vs_previous,minutes_per_additional_correct
+TinyAya-Water,top-5,0.8175,1151,1408,0:19:29,7.7 GiB / 1 GPU,,,
+Llama-8B,top-10,0.8416,1185,1408,1:11:56,16.4 GiB / 1 GPU,34,52.45,1.54
+Qwen3-30B,top-10,0.8899,1253,1408,2:54:08,60.7 GiB / A100,68,102.20,1.50

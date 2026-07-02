@@ -201,5 +201,9 @@ data/hf_cache/
 data/oracle_cache/
 data/runs/
 report/
+report_acl/
+FINAL_Minding_the_Retrieval_Gap_in_RAG*.pdf
+Minding_the_Retrieval_Gap_in_RAG*.pdf
+!Minding_the_Retrieval_Gap_in_RAG__An_Oracle_vs__Embedding_RAG_Analysis_on_Multilingual_Regional_QA.pdf
 slurm_logs/*
 !slurm_logs/.gitkeep

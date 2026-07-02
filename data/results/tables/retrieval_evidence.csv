@@ -1,0 +1,3 @@
+pool,gold_page_recall,mrr,strict_answer_string_recall,relaxed_answer_token_recall
+top-5,0.7436,0.5867,0.6357,0.7820
+top-10,0.8139,0.5962,0.6690,0.8281

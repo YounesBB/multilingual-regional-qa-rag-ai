@@ -1,0 +1,13 @@
+system_id,system,condition,top_k,generator,accuracy,cs_accuracy,sk_accuracy,uk_accuracy,correct,incorrect,unknown,record_count
+oracle_full_dev_qwen3_30b_a3b,Oracle Qwen3-30B,Oracle,,Qwen3-30B,0.953125,0.960377358490566,0.9594320486815415,0.935064935064935,1342,66,0,1408
+oracle_full_dev_llama31_8b,Oracle Llama-8B,Oracle,,Llama-8B,0.9339488636363636,0.9471698113207547,0.9452332657200812,0.9012987012987013,1315,93,0,1408
+oracle_full_dev_tiny_aya_water,Oracle TinyAya-Water,Oracle,,TinyAya-Water,0.8977272727272727,0.9113207547169812,0.9350912778904665,0.8311688311688312,1264,144,0,1408
+embedding_rag_qwen3_30b_a3b_e5_full_dev_retrieval_top10,Qwen3-30B top-10,Embedding,10,Qwen3-30B,0.8899147727272727,0.9,0.9148073022312373,0.8441558441558441,1253,155,0,1408
+oracle_full_dev_tiny_aya,Oracle TinyAya-Global,Oracle,,TinyAya-Global,0.8792613636363636,0.9,0.9148073022312373,0.8051948051948052,1238,170,0,1408
+embedding_rag_qwen3_30b_a3b_e5_full_dev_retrieval_top5,Qwen3-30B top-5,Embedding,5,Qwen3-30B,0.8700284090909091,0.8754716981132076,0.9026369168356998,0.8207792207792208,1225,183,0,1408
+embedding_rag_llama31_8b_e5_full_dev_retrieval_top10,Llama-8B top-10,Embedding,10,Llama-8B,0.8416193181818182,0.8679245283018868,0.8762677484787018,0.7610389610389611,1185,223,0,1408
+embedding_rag_llama31_8b_e5_full_dev_retrieval_top5,Llama-8B top-5,Embedding,5,Llama-8B,0.8295454545454546,0.8622641509433963,0.8600405679513184,0.7454545454545455,1168,240,0,1408
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top5,TinyAya-Water top-5,Embedding,5,TinyAya-Water,0.8174715909090909,0.8226415094339623,0.8620689655172413,0.7532467532467533,1151,257,0,1408
+embedding_rag_tiny_aya_global_e5_full_dev_retrieval_top5,TinyAya-Global top-5,Embedding,5,TinyAya-Global,0.7911931818181818,0.809433962264151,0.8275862068965517,0.7194805194805195,1114,294,0,1408
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top10,TinyAya-Water top-10,Embedding,10,TinyAya-Water,0.7776988636363636,0.8113207547169812,0.7829614604462475,0.7246753246753247,1095,313,0,1408
+embedding_rag_tiny_aya_global_e5_full_dev_retrieval_top10,TinyAya-Global top-10,Embedding,10,TinyAya-Global,0.7400568181818182,0.7981132075471699,0.7403651115618661,0.6597402597402597,1042,366,0,1408

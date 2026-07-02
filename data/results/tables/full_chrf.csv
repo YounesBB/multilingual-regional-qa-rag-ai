@@ -1,0 +1,13 @@
+system_id,system,condition,top_k,generator,chrf,cs_chrf,sk_chrf,uk_chrf,record_count,empty_answer_count
+oracle_full_dev_qwen3_30b_a3b,Oracle Qwen3-30B,Oracle,,Qwen3-30B,56.515233124361785,59.66809567164306,57.984808440005544,52.778939284647834,1408,0
+embedding_rag_qwen3_30b_a3b_e5_full_dev_retrieval_top5,Qwen3-30B top-5,Embedding,5,Qwen3-30B,49.94787298618032,53.056707001248185,52.53097130057516,45.32706826805626,1408,0
+embedding_rag_qwen3_30b_a3b_e5_full_dev_retrieval_top10,Qwen3-30B top-10,Embedding,10,Qwen3-30B,49.4242284696861,52.4260131612303,50.869879407452586,45.75270032629116,1408,0
+oracle_full_dev_llama31_8b,Oracle Llama-8B,Oracle,,Llama-8B,45.88909077257225,46.39054784654781,46.25586737384854,45.19688862055052,1408,0
+embedding_rag_llama31_8b_e5_full_dev_retrieval_top5,Llama-8B top-5,Embedding,5,Llama-8B,40.524232085084236,40.266007501775306,41.750609370557065,39.80429830169112,1408,0
+embedding_rag_llama31_8b_e5_full_dev_retrieval_top10,Llama-8B top-10,Embedding,10,Llama-8B,40.50786863543921,40.080753852861065,41.50558711755561,40.14633418785385,1408,0
+oracle_full_dev_tiny_aya_water,Oracle TinyAya-Water,Oracle,,TinyAya-Water,39.89215172544592,40.413588260843305,42.13704262943522,37.774803539187545,1408,0
+oracle_full_dev_tiny_aya,Oracle TinyAya-Global,Oracle,,TinyAya-Global,39.874683195351274,41.13662527896788,41.762583042263834,37.35240116552979,1408,0
+embedding_rag_tiny_aya_global_e5_full_dev_retrieval_top5,TinyAya-Global top-5,Embedding,5,TinyAya-Global,37.293789793544455,38.33142710837089,38.594988798305145,35.41435320179567,1408,0
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top5,TinyAya-Water top-5,Embedding,5,TinyAya-Water,37.101210456776855,37.22827704006051,38.58540664090015,35.8894147744292,1408,0
+embedding_rag_tiny_aya_global_e5_full_dev_retrieval_top10,TinyAya-Global top-10,Embedding,10,TinyAya-Global,37.071513709602385,39.20654811274848,38.35147770595738,34.22751711601251,1408,0
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top10,TinyAya-Water top-10,Embedding,10,TinyAya-Water,36.555825876247155,37.76397767385539,37.401742808918904,34.86985342569979,1408,0

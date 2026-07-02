@@ -1,13 +1,57 @@
-# CUS-QA RAG Experiments
+# Minding the Retrieval Gap in AI Question Answering
 
-This repository contains the reported code pipeline for native-language text
-experiments on CUS-QA in Czech (`cs`), Slovak (`sk`), and Ukrainian (`uk`).
-It compares an Oracle RAG condition with an Embedding RAG condition built from
-FineWiki, multilingual E5 embeddings, and FAISS retrieval.
+**Oracle vs. Embedding RAG for Multilingual Regional QA on CUS-QA**
 
-The active code is organized for running on Fox, the UiO HPC cluster. Runtime
-artifacts, cached models, FineWiki indexes, generated JSONL files, and local
-report notes are intentionally kept out of Git.
+## Project Overview
+
+This project was developed for the RAG track in **IN5550: Neural Methods in
+Natural Language Processing** at the University of Oslo. The goal of the exam
+was to write and submit a “mini master thesis” style paper in NLP, supported by
+an implemented experimental system. The accompanying paper, **“Minding the
+Retrieval Gap in RAG: An Oracle vs. Embedding RAG Analysis on Multilingual
+Regional QA,”** was selected as the **top paper for the RAG track out
+of 6 submitted papers**.
+
+Quick links:
+
+- [Full report PDF](Minding_the_Retrieval_Gap_in_RAG__An_Oracle_vs__Embedding_RAG_Analysis_on_Multilingual_Regional_QA.pdf)
+- [Outstanding paper award](top_paper_for_the_rag_track.JPG)
+- [2-minute presentation](2min_presentation_rqa_minding_the_retrieval_gap_in_rag.pdf)
+
+Paper abstract:
+
+Open-ended regional question answering asks for locally grounded facts, such as
+the garden associated with a Czech town or the genre of a Slovak music
+association, that broad multilingual benchmarks fail to capture and current
+large language models (LLMs) struggle to answer. I study how
+retrieval-augmented generation (RAG) can close this gap on CUS-QA, a dataset of
+native-speaker questions in Czech, Slovak, and Ukrainian. To separate retrieval
+from generation errors, I compare Oracle RAG, fed the known source page, against
+Embedding RAG, which retrieves same-language chunks via a dense multilingual
+embedding model. I evaluate four open-weight generators, `Tiny Aya Global
+(3.35B)`, `Tiny Aya Water (3.35B)`, `Llama 3.1 8B`, and `Qwen3-30B-A3B`, with
+LLM-as-a-judge M-Prometheus and chrF on the hidden test. Retrieval is the
+dominant bottleneck: replacing known source-page context with realistically
+retrieved chunks drops answer correctness from `0.953` to `0.890` even for the
+strongest model. `Qwen3-30B-A3B` delivers the best practical performance, and a
+top-`k` ablation shows that larger models benefit from more retrieved context
+while smaller Tiny Aya models are distracted by it. The repository also
+includes a focused BGE reranking pilot showing that cleaner evidence ordering
+improves Tiny Aya Water.
+
+What this repository contains:
+
+- End-to-end Oracle and Embedding RAG pipeline code.
+- SLURM workflows for Fox, the UiO HPC cluster.
+- Retrieval diagnostics, M-Prometheus judging, and Codabench packaging.
+- Small smoke data, manual-audit CSVs, cleaned result tables, and selected
+  plots.
+- An optional BGE reranking pilot over E5 retrieval.
+
+The rest of this README documents the main findings, tracked artifacts, and
+commands for reproducing the RAG pipeline. Large generated outputs, cached
+models, FineWiki indexes, and local report-drafting artifacts are intentionally
+excluded and can be regenerated under `$CUSQA_WORK`.
 
 ## Headline Results
 
@@ -15,13 +59,19 @@ The reported experiments cover native-language text questions only. Development
 answer quality uses M-Prometheus binary correctness as the primary metric;
 Codabench hidden-test comparisons use chrF for partial native-text submissions.
 
-- Exact target-title retrieval improves from `74.4%` at top-5 to `81.4%` at
+- Target-title retrieval improves from `74.4%` at top-5 to `81.4%` at
   top-10 on the 1,408-question development set.
+- Direct retrieval diagnostics show that top-10 improves gold-page recall
+  from `0.7436` to `0.8139`, while MRR changes only from `0.5867` to `0.5962`;
+  strict answer-string recall rises from `0.6357` to `0.6690`, and relaxed
+  answer-token recall rises from `0.7820` to `0.8281`.
 - The strongest generator still shows an Oracle-to-Embedding gap: Qwen3-30B
-  reaches `0.953` M-Prometheus accuracy with exact-page Oracle context and
-  `0.890` with E5 top-10 retrieved FineWiki context.
+  reaches `0.953` M-Prometheus accuracy with known-source chunked Oracle
+  context and `0.890` with E5 top-10 retrieved FineWiki context.
 - Top-10 retrieval helps Qwen3-30B and Llama-8B, but hurts both Tiny Aya
   variants, so retrieval depth should be tuned with the generator.
+- A focused BGE reranking pilot improves Tiny Aya Water in both final context
+  sizes, but reranked top-5 remains best for this small generator.
 - The strongest partial Codabench submission is E5 top-10 plus Qwen3-30B with
   `51.09` weighted native-text chrF.
 
@@ -42,10 +92,29 @@ Codabench hidden-test comparisons use chrF for partial native-text submissions.
 | TinyAya-Water top-10 | Embedding | 10 | 0.7777 | 1095 / 1408 |
 | TinyAya-Global top-10 | Embedding | 10 | 0.7401 | 1042 / 1408 |
 
-The Oracle condition uses the exact development source page. Embedding RAG uses
-same-language E5/FAISS retrieval over FineWiki.
+The Oracle condition uses known-source chunked context from the development
+source page. Embedding RAG uses same-language E5/FAISS retrieval over FineWiki.
 
 ![Oracle vs Embedding RAG development accuracy](plots/main_paper/oracle_vs_embedding_gap.png)
+
+### Retrieval Diagnostics
+
+The development set includes source-page metadata, so retrieval can be checked
+directly. Gold-page recall asks whether the known source page appears anywhere
+in the retrieved chunks; MRR gives more credit when it appears earlier. The
+answer-string diagnostics are conservative proxies: strict recall requires the
+normalized reference answer to occur verbatim, while relaxed token recall checks
+whether the main answer tokens appear in context.
+
+| Pool | Gold-page recall | MRR | Strict answer | Relaxed answer |
+|---|---:|---:|---:|---:|
+| top-5 | 0.7436 | 0.5867 | 0.6357 | 0.7820 |
+| top-10 | 0.8139 | 0.5962 | 0.6690 | 0.8281 |
+
+The full CSV version is tracked at
+`data/results/tables/retrieval_evidence.csv`.
+
+![Target-title retrieval by language](plots/main_paper/retrieval_hit_rate_by_language.png)
 
 ### Codabench Native-Text Test
 
@@ -59,6 +128,25 @@ Ukrainian text rows only.
 | Llama-8B | 10 | 41.27 | 0.468 | 6.10 | 0.535 |
 | Qwen3-30B | 10 | **51.09** | **0.559** | **10.94** | **0.635** |
 
+### Reranking Pilot
+
+As a late-stage pilot, BGE reranking was tested only for Tiny Aya Water because
+it is the strongest low-resource operating point and finishes much faster than
+the larger generators. The reranker reorders existing E5 top-10 candidates and
+then generation runs unchanged.
+
+| Tiny Aya Water setting | M-Prometheus | chrF |
+|---|---:|---:|
+| Raw E5 top-5 | 0.8175 | 37.10 |
+| BGE reranked top-5 | **0.8450** | 38.56 |
+| Raw E5 top-10 | 0.7777 | 36.56 |
+| BGE reranked top-10 | 0.8053 | **39.23** |
+
+Reranking improves both top-5 and top-10 relative to raw E5, but reranked
+top-5 remains the best M-Prometheus setting for Tiny Aya Water.
+
+![Tiny Aya Water reranking pilot](plots/diagnostics/tiny_aya_water_rerank.png)
+
 ## Repository Layout
 
 ```text
@@ -70,13 +158,37 @@ Ukrainian text rows only.
 |-- slurm/                   # Active SLURM entrypoints
 |   `-- checks/              # Low-cost smoke/audit checks
 |-- archive/                 # Earlier or blocked experiments
-|-- data/                    # Small tracked samples and ignored local outputs
+|-- data/                    # Smoke inputs, audit CSVs, and result tables
+|   |-- audits/              # Manual M-Prometheus audit CSVs
+|   |-- results/             # Clean CSV result and diagnostic tables
+|   `-- smoke/               # Small tracked smoke-test inputs
+|-- plots/                   # Selected tracked figures
+|   |-- appendix/
+|   |-- diagnostics/
+|   `-- main_paper/
 |-- README.md
 `-- .gitignore
 ```
 
 The active Python modules stay under `scripts/`. The wrappers under `slurm/`
 are the preferred entrypoints for the full experiments.
+
+## Tracked Data and Results
+
+The repository includes small data artifacts that are useful for inspection and
+lightweight reproduction:
+
+- `data/smoke/` contains small CUS-QA and FineWiki samples for smoke runs.
+- `data/audits/` contains the manual M-Prometheus audit spreadsheets.
+- `data/results/tables/` contains cleaned CSV versions of the reported result
+  tables, setup summaries, and diagnostics.
+- `data/results/run_summaries/` contains small CSV summaries copied from local
+  run outputs.
+
+Large generated outputs remain excluded: full answer JSONL files, reranked
+retrieval JSONL, Codabench zips, model caches, retrieval indexes, and job logs
+should be regenerated from the wrappers when needed. The ignored `data/runs/`
+directory is only for local generated outputs.
 
 ## Work Directory
 
@@ -141,7 +253,7 @@ separately.
 ### 1. Prepare and run Oracle RAG
 
 `slurm/oracle_full_dev.slurm` prepares the native-language development input,
-runs Oracle RAG with source-page context, and validates the output:
+runs Oracle RAG with known-source chunked context, and validates the output:
 
 ```bash
 sbatch --gpus=rtx30:1 --mem=32G --time=01:30:00 \
@@ -183,7 +295,24 @@ Run with `TOP_K=10` for the top-k comparison. Retrieval output JSONL and
 coverage summaries are written to `$CUSQA_WORK/runs/` and
 `$CUSQA_WORK/summaries/`.
 
-### 4. Generate Embedding RAG answers
+### 4. Optional: rerank retrieved chunks
+
+The reranking pilot is a thin candidate-selection step. It reads an existing
+E5 top-10 retrieval JSONL, reorders chunks with `BAAI/bge-reranker-v2-m3`, and
+writes retrieval-compatible top-5 and top-10 JSONL files:
+
+```bash
+sbatch --gpus=rtx30:1 --mem=32G --time=01:00:00 \
+  --export=ALL,INPUT_TAG=e5_full_dev_retrieval_top10,OUTPUT_TOP_KS="5 10" \
+  slurm/rerank_retrieval.slurm
+```
+
+The output retrieval tags are:
+
+- `e5_full_dev_retrieval_top10_rerank_bge_top5`
+- `e5_full_dev_retrieval_top10_rerank_bge_top10`
+
+### 5. Generate Embedding RAG answers
 
 Generation consumes a retrieval JSONL and writes answer records separately from
 the full FineWiki index:
@@ -198,7 +327,16 @@ The wrapper also supports Tiny Aya and Llama model tags used in the reported
 comparisons. Small `LIMIT_RECORDS_PER_LANG` values are useful for a fast
 generation check.
 
-### 5. Evaluate generated development outputs
+For the reranked Tiny Aya Water pilot, keep decoding unchanged and only switch
+the retrieval tag:
+
+```bash
+sbatch --gpus=1 --mem=32G --time=01:30:00 \
+  --export=ALL,MODEL_NAME=CohereLabs/tiny-aya-water,MODEL_TAG=tiny_aya_water,RETRIEVAL_TAG=e5_full_dev_retrieval_top10_rerank_bge_top5,LIMIT_RECORDS_PER_LANG=0 \
+  slurm/embedding_rag_generate.slurm
+```
+
+### 6. Evaluate generated development outputs
 
 Run cheap chrF over the curated development outputs on CPU:
 
@@ -216,7 +354,14 @@ sbatch --gpus=1 --mem=32G --time=05:00:00 \
   slurm/judge_mprometheus.slurm
 ```
 
-### 6. Prepare Codabench native-text submission files
+Retrieval evidence diagnostics can also be regenerated from existing retrieval
+JSONL files:
+
+```bash
+python scripts/evaluate_retrieval_evidence.py
+```
+
+### 7. Prepare Codabench native-text submission files
 
 First convert the public Codabench test template to the internal native-text
 question format used by retrieval:
@@ -232,8 +377,8 @@ generation wrappers. Then package a partial native-text Codabench submission:
 ```bash
 python scripts/submission/make_codabench_submission.py \
   --predictions-jsonl "$CUSQA_WORK/runs/embedding_rag_qwen3_30b_a3b_e5_full_test_retrieval_top10.jsonl" \
-  --output-jsonl data/runs/codabench_submission_text_native.jsonl \
-  --output-zip data/runs/codabench_submission_text_native.zip
+  --output-jsonl "$CUSQA_WORK/submissions/codabench_submission_text_native.jsonl" \
+  --output-zip "$CUSQA_WORK/submissions/codabench_submission_text_native.zip"
 ```
 
 Submit the zip with Codabench `Partial=true` unless predictions for the other
@@ -246,9 +391,13 @@ regions/modalities are also added.
 | Oracle RAG | `slurm/oracle_full_dev.slurm` | `scripts/oracle_rag.py` |
 | FineWiki index | `slurm/build_finewiki_index.slurm` | `scripts/build_finewiki_index.py` |
 | Retrieval | `slurm/retrieve_finewiki_dev.slurm` | `scripts/retrieve_finewiki_dev.py` |
+| Reranking pilot | `slurm/rerank_retrieval.slurm` | `scripts/rerank_retrieval.py` |
 | Embedding RAG generation | `slurm/embedding_rag_generate.slurm` | `scripts/generate_embedding_rag.py` |
 | chrF | `slurm/evaluate_chrf.slurm` | `scripts/evaluate_chrf.py` |
 | M-Prometheus | `slurm/judge_mprometheus.slurm` | `scripts/judge_mprometheus.py` |
+| Retrieval diagnostics | none | `scripts/evaluate_retrieval_evidence.py` |
+| Manual audit sampling | none | `scripts/create_mprometheus_audit.py` |
+| Reranking plot | none | `scripts/reporting/plot_tiny_aya_rerank.py` |
 | Codabench packaging | none | `scripts/submission/*.py` |
 
 Low-cost checks are kept separately:

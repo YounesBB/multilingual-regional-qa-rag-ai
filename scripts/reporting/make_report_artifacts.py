@@ -44,6 +44,13 @@ MAIN_SYSTEM_IDS = {
     "embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top5",
 }
 
+RETRIEVAL_EVIDENCE_METRICS = (
+    ("gold_page_recall_at_k", "Gold-page recall"),
+    ("mrr_at_k", "MRR"),
+    ("strict_answer_string_recall_at_k", "Strict answer"),
+    ("relaxed_answer_token_recall_at_k", "Relaxed answer"),
+)
+
 
 def read_json(path: Path) -> dict:
     with path.open(encoding="utf-8") as handle:
@@ -199,6 +206,14 @@ def load_retrieval_rows(work_dir: Path) -> list[dict]:
         }
     )
     return rows
+
+
+def load_retrieval_evidence(work_dir: Path) -> dict | None:
+    path = work_dir / "summaries" / "e5_full_dev_retrieval_evidence_summary.json"
+    if not path.exists():
+        print(f"Retrieval evidence summary not found at {path}; skipping evidence plots.")
+        return None
+    return read_json(path)
 
 
 def load_mprometheus_rows(work_dir: Path) -> list[dict]:
@@ -572,6 +587,107 @@ def plot_retrieval(rows: list[dict], plots_dir: Path, formats: list[str]) -> Non
     plt.close(fig)
 
 
+def plot_retrieval_evidence_by_k(
+    evidence: dict | None,
+    plots_dir: Path,
+    formats: list[str],
+) -> None:
+    if not evidence:
+        return
+    summaries = sorted(evidence.get("summaries", []), key=lambda item: item["top_k"])
+    if not summaries:
+        return
+    plt = load_matplotlib()
+    labels = [label for _, label in RETRIEVAL_EVIDENCE_METRICS]
+    x = list(range(len(labels)))
+    width = 0.34
+    offsets = {
+        summaries[0]["top_k"]: -width / 2,
+        summaries[-1]["top_k"]: width / 2,
+    }
+    colors = {
+        summaries[0]["top_k"]: "#777777",
+        summaries[-1]["top_k"]: "#c8c8c8",
+    }
+
+    fig, ax = plt.subplots(figsize=(6.7, 3.4))
+    for summary in summaries:
+        top_k = summary["top_k"]
+        values = [
+            100 * summary["overall"][metric]
+            for metric, _ in RETRIEVAL_EVIDENCE_METRICS
+        ]
+        bars = ax.bar(
+            [i + offsets.get(top_k, 0.0) for i in x],
+            values,
+            width,
+            label=f"top-{top_k}",
+            color=colors.get(top_k, "#aaaaaa"),
+            edgecolor="#333333" if top_k == summaries[-1]["top_k"] else None,
+        )
+        add_bar_labels(ax, bars, fmt="{:.1f}", dy=1.0)
+    ax.set_ylabel("Score (0-100 scale)")
+    ax.set_ylim(0, 100)
+    ax.set_xticks(x, labels, fontsize=8)
+    ax.legend(frameon=False, ncols=2)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="#dddddd", linewidth=0.6)
+    save_figure(fig, plots_dir / "diagnostics" / "retrieval_evidence_metrics_by_k", formats)
+    plt.close(fig)
+
+
+def plot_retrieval_evidence_by_language(
+    evidence: dict | None,
+    plots_dir: Path,
+    formats: list[str],
+) -> None:
+    if not evidence:
+        return
+    summaries = evidence.get("summaries", [])
+    if not summaries:
+        return
+    summary = max(summaries, key=lambda item: item["top_k"])
+    plt = load_matplotlib()
+    labels = [LANG_LABELS[lang] for lang in LANG_ORDER]
+    x = list(range(len(labels)))
+    width = 0.18
+    colors = ["#555555", "#888888", "#bbbbbb", "#e0e0e0"]
+    offsets = [-1.5 * width, -0.5 * width, 0.5 * width, 1.5 * width]
+
+    fig, ax = plt.subplots(figsize=(6.7, 3.5))
+    for offset, color, (metric, label) in zip(
+        offsets,
+        colors,
+        RETRIEVAL_EVIDENCE_METRICS,
+    ):
+        values = [
+            100 * summary["per_language"][lang][metric]
+            for lang in LANG_ORDER
+        ]
+        bars = ax.bar(
+            [i + offset for i in x],
+            values,
+            width,
+            label=label,
+            color=color,
+            edgecolor="#333333" if metric == "relaxed_answer_token_recall_at_k" else None,
+            linewidth=0.6,
+        )
+        add_bar_labels(ax, bars, fmt="{:.1f}", dy=1.0)
+    ax.set_ylabel(f"top-{summary['top_k']} score (0-100 scale)")
+    ax.set_ylim(0, 100)
+    ax.set_xticks(x, labels)
+    ax.legend(frameon=False, ncols=2, fontsize=8)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="#dddddd", linewidth=0.6)
+    save_figure(
+        fig,
+        plots_dir / "diagnostics" / "retrieval_evidence_by_language_top10",
+        formats,
+    )
+    plt.close(fig)
+
+
 def plot_topk_delta(ablation_rows: list[dict], plots_dir: Path, formats: list[str]) -> None:
     plt = load_matplotlib()
     labels = [row["generator"] for row in ablation_rows]
@@ -758,6 +874,7 @@ def main() -> int:
     dirs = ensure_dirs(args.plots_dir, args.tables_dir)
 
     retrieval_rows = load_retrieval_rows(args.work_dir)
+    retrieval_evidence = load_retrieval_evidence(args.work_dir)
     mprometheus_rows = load_mprometheus_rows(args.work_dir)
     chrf_rows = load_chrf_rows(args.work_dir)
 
@@ -768,6 +885,8 @@ def main() -> int:
     topk_rows = write_topk_table(mprometheus_rows, dirs["tables"])
 
     plot_retrieval(retrieval_rows, args.plots_dir, args.formats)
+    plot_retrieval_evidence_by_k(retrieval_evidence, args.plots_dir, args.formats)
+    plot_retrieval_evidence_by_language(retrieval_evidence, args.plots_dir, args.formats)
     plot_topk_delta(topk_rows, args.plots_dir, args.formats)
     plot_oracle_gap(mprometheus_rows, args.plots_dir, args.formats)
     plot_mprometheus_heatmap(mprometheus_rows, args.plots_dir, args.formats)

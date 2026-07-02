@@ -1,0 +1,13 @@
+system_id,system,condition,top_k,generator,chrf,mprometheus_accuracy,rank_chrf,rank_mprometheus,rank_difference_chrf_minus_mprometheus
+oracle_full_dev_qwen3_30b_a3b,Oracle Qwen3-30B,Oracle,,Qwen3-30B,56.515233124361785,0.953125,1,1,0
+oracle_full_dev_llama31_8b,Oracle Llama-8B,Oracle,,Llama-8B,45.88909077257225,0.9339488636363636,4,2,2
+oracle_full_dev_tiny_aya_water,Oracle TinyAya-Water,Oracle,,TinyAya-Water,39.89215172544592,0.8977272727272727,7,3,4
+embedding_rag_qwen3_30b_a3b_e5_full_dev_retrieval_top10,Qwen3-30B top-10,Embedding,10,Qwen3-30B,49.4242284696861,0.8899147727272727,3,4,-1
+oracle_full_dev_tiny_aya,Oracle TinyAya-Global,Oracle,,TinyAya-Global,39.874683195351274,0.8792613636363636,8,5,3
+embedding_rag_qwen3_30b_a3b_e5_full_dev_retrieval_top5,Qwen3-30B top-5,Embedding,5,Qwen3-30B,49.94787298618032,0.8700284090909091,2,6,-4
+embedding_rag_llama31_8b_e5_full_dev_retrieval_top10,Llama-8B top-10,Embedding,10,Llama-8B,40.50786863543921,0.8416193181818182,6,7,-1
+embedding_rag_llama31_8b_e5_full_dev_retrieval_top5,Llama-8B top-5,Embedding,5,Llama-8B,40.524232085084236,0.8295454545454546,5,8,-3
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top5,TinyAya-Water top-5,Embedding,5,TinyAya-Water,37.101210456776855,0.8174715909090909,10,9,1
+embedding_rag_tiny_aya_global_e5_full_dev_retrieval_top5,TinyAya-Global top-5,Embedding,5,TinyAya-Global,37.293789793544455,0.7911931818181818,9,10,-1
+embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top10,TinyAya-Water top-10,Embedding,10,TinyAya-Water,36.555825876247155,0.7776988636363636,12,11,1
+embedding_rag_tiny_aya_global_e5_full_dev_retrieval_top10,TinyAya-Global top-10,Embedding,10,TinyAya-Global,37.071513709602385,0.7400568181818182,11,12,-1

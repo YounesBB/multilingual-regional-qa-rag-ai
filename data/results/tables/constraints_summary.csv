@@ -1,0 +1,7 @@
+constraint,effect_in_this_report,if_unconstrained
+Native-text scope,"We evaluate only Czech, Slovak, and Ukrainian textual rows; visual and English-translated rows are outside scope.",Add visual QA and English-translated rows for a complete Codabench submission.
+Same-language retrieval,"Each question searches only the matching FineWiki language, reducing cross-language noise.",Test shared multilingual indexes or query/document translation.
+Single dense retriever,Multilingual E5 is the only base retriever in the main runs.,"Compare BGE-M3, LaBSE, BM25, and hybrid sparse+dense retrieval."
+Limited reranking pilot,Reranking is tested only for Tiny Aya Water over E5 top-10 candidates because of queue time and compute limits.,Rerank top-10/top-20 candidates for all generators and hidden-test submissions.
+Fixed chunking,We use one 512/128 fixed-window setting.,Run chunk-size and section/table-aware chunking ablations.
+Shared HPC stack,Final systems are limited to models that ran reliably on available Fox modules and GPUs.,Evaluate larger/newer generators and more backends under stable software support.

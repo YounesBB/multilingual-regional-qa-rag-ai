@@ -136,6 +136,12 @@ case "$INPUT_GROUP" in
       embedding_tiny_aya_water_top10)
         INPUTS=("$RUN_DIR/embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top10.jsonl")
         ;;
+      embedding_tiny_aya_water_rerank_bge_top5)
+        INPUTS=("$RUN_DIR/embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top10_rerank_bge_top5.jsonl")
+        ;;
+      embedding_tiny_aya_water_rerank_bge_top10)
+        INPUTS=("$RUN_DIR/embedding_rag_tiny_aya_water_e5_full_dev_retrieval_top10_rerank_bge_top10.jsonl")
+        ;;
       embedding_llama31_8b_top5)
         INPUTS=("$RUN_DIR/embedding_rag_llama31_8b_e5_full_dev_retrieval_top5.jsonl")
         ;;
@@ -154,6 +160,7 @@ case "$INPUT_GROUP" in
         echo "  oracle_tiny_aya_global oracle_tiny_aya_water oracle_llama31_8b oracle_qwen3_30b_a3b" >&2
         echo "  embedding_tiny_aya_global_top5 embedding_tiny_aya_global_top10" >&2
         echo "  embedding_tiny_aya_water_top5 embedding_tiny_aya_water_top10" >&2
+        echo "  embedding_tiny_aya_water_rerank_bge_top5 embedding_tiny_aya_water_rerank_bge_top10" >&2
         echo "  embedding_llama31_8b_top5 embedding_llama31_8b_top10" >&2
         echo "  embedding_qwen3_30b_a3b_top5 embedding_qwen3_30b_a3b_top10" >&2
         exit 2
